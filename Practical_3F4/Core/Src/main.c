@@ -50,10 +50,12 @@
 // - Performance timing variables (e.g execution time, throughput, pixels per second, clock cycles)
 	volatile uint32_t start_time = 0;
 	volatile uint32_t end_time = 0;
-	volatile uint32_t fixed_checksums[5];
-	volatile uint32_t fixed_exec[5];
-	volatile uint32_t double_checksums[5];
-	volatile uint32_t double_exec[5];
+	volatile uint64_t fixed_checksums[5][5];
+	volatile uint32_t fixed_exec[5][5];
+
+	//volatile uint64_t double_checksums[5][5];s
+	//volatile uint32_t double_exec[5][5];
+
 	volatile uint32_t execution_time = 0;
 	volatile uint64_t checksum = 0;
 
@@ -92,6 +94,7 @@ int main(void)
 
 
   int sizes[] = {128, 160, 192, 244, 256};
+  int max_iters[] = {100, 250, 500, 750, 1000};
 
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
 
@@ -100,30 +103,36 @@ int main(void)
   /* USER CODE END 2 */
 for (int i = 0; i < 5; i++)
  {
+	for (int j = 0; j < 5; j++) {
+
 	  int size = sizes[i];
+	  int max_iter = max_iters[j];
 
 	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET); // record start time
-	  checksum = calculate_mandelbrot_fixed_point_arithmetic(size, size, MAX_ITER); // call mandelbrot and store in checksum
-	  fixed_checksums[i] = checksum;
+	  checksum = calculate_mandelbrot_fixed_point_arithmetic(size, size, max_iter); // call mandelbrot and store in checksum
+	  fixed_checksums[i][j] = checksum;
 	  end_time = HAL_GetTick(); // record end time
-	  fixed_exec[i] = end_time - start_time; // calculate execution time
+	  fixed_exec[i][j] = end_time - start_time; // calculate execution time
+	}
 
 
   }
+/* USER CODE END 2 */
+/*for (int i = 0; i < 5; i++)
+ {
+	  int size = sizes[i];
 
-   /* USER CODE END 2 */
-
-   for (int i = 0; i < 5; i++) {
- 	  int size = sizes[i];
-
- 	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET); // record start time
- 	  checksum = calculate_mandelbrot_double(size, size, MAX_ITER); // call mandelbrot and store in checksum
- 	  double_checksums[i] = checksum;
- 	  end_time = HAL_GetTick(); // record end time
- 	  double_exec[i] = end_time - start_time; // calculate execution time
+	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET); // record start time
+	  checksum = calculate_mandelbrot_double(size, size, MAX_ITER); // call mandelbrot and store in checksum
+	  double_checksums[i] = checksum;
+	  end_time = HAL_GetTick(); // record end time
+	  double_exec[i] = end_time - start_time; // calculate execution time
 
 
-   }
+  }*/
+
+
+
    __BKPT(0);
    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1, GPIO_PIN_RESET);
 }
