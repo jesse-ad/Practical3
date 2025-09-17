@@ -226,7 +226,7 @@ static void MX_GPIO_Init(void)
   uint64_t mandelbrot_sum = 0;
 
    // Fixed variables
-	#define FIXED_SHIFT 12
+	#define FIXED_SHIFT 16
 	#define FIXED_ONE (1 << FIXED_SHIFT)
 	int x0, y0, xi, yi, x_temp, iteration;
 
