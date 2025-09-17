@@ -22,37 +22,17 @@
 #include <stdint.h>
 #define MAX_ITER 100
 
-
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
 //TODO: Define variables you think you might need
 // - Performance timing variables (e.g execution time, throughput, pixels per second, clock cycles)
-	volatile uint32_t start_time = 0;
-	volatile uint32_t end_time = 0;
-	volatile uint64_t fixed_checksums[5][5];
-	volatile uint32_t fixed_exec[5][5];
-
+	//volatile uint32_t start_time = 0;
+	//volatile uint32_t end_time = 0;
+	volatile uint32_t fixed_checksums[5];
+	volatile uint32_t exec_ms[5];
+	volatile uint32_t exec_cycles[5];
+	volatile uint32_t throughput[5];
 	//volatile uint64_t double_checksums[5][5];s
 	//volatile uint32_t double_exec[5][5];
 
@@ -90,32 +70,47 @@ int main(void)
   SystemClock_Config();
   MX_GPIO_Init();
 
+  // Enable DWT cycle counter
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+  DWT->CYCCNT = 0;    // reset counter
+  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;  // enable counter
+
+
   /* USER CODE BEGIN 2 */
 
 
   int sizes[] = {128, 160, 192, 244, 256};
-  int max_iters[] = {100, 250, 500, 750, 1000};
+  //int max_iters[] = {100, 250, 500, 750, 1000};
 
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
-
-
 
   /* USER CODE END 2 */
 for (int i = 0; i < 5; i++)
  {
-	for (int j = 0; j < 5; j++) {
-
 	  int size = sizes[i];
-	  int max_iter = max_iters[j];
 
-	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET); // record start time
-	  checksum = calculate_mandelbrot_fixed_point_arithmetic(size, size, max_iter); // call mandelbrot and store in checksum
-	  fixed_checksums[i][j] = checksum;
-	  end_time = HAL_GetTick(); // record end time
-	  fixed_exec[i][j] = end_time - start_time; // calculate execution time
+	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+	  DWT->CYCCNT = 0;
+	  uint32_t start_ms = HAL_GetTick();
+
+
+	  checksum = calculate_mandelbrot_fixed_point_arithmetic(size, size, MAX_ITER); // call mandelbrot and store in checksum
+
+	  uint32_t end_ms = HAL_GetTick(); // record end time
+	  uint32_t cycles = DWT->CYCCNT;
+	  exec_ms[i] = end_ms - start_ms; // calculate execution time
+	  exec_cycles[i] = cycles;
+
+	  int pixels = size * size;
+	  float execution_time_s = (float)cycles / (float)SystemCoreClock;
+	  throughput[i] = (uint32_t)pixels / execution_time_s;
+
+	  HAL_Delay(200);
 	}
 
 
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1, GPIO_PIN_RESET);
+	__BKPT(0);
   }
 /* USER CODE END 2 */
 /*for (int i = 0; i < 5; i++)
@@ -128,14 +123,13 @@ for (int i = 0; i < 5; i++)
 	  end_time = HAL_GetTick(); // record end time
 	  double_exec[i] = end_time - start_time; // calculate execution time
 
-
+s
   }*/
 
 
 
-   __BKPT(0);
-   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1, GPIO_PIN_RESET);
-}
+
+
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
