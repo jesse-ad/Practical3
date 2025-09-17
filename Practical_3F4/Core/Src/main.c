@@ -98,13 +98,13 @@ for (int i = 0; i < 5; i++)
 	  uint32_t start_ms = HAL_GetTick();
 
 
-	  checksum = calculate_mandelbrot_double(size, size, MAX_ITER); // call mandelbrot and store in checksum
-	  double_checksums[i] = checksum;
+	  checksum = calculate_mandelbrot_fixed_point_arithmetic(size, size, MAX_ITER); // call mandelbrot and store in checksum
+	  fixed_checksums[i] = checksum;
 	  uint32_t end_ms = HAL_GetTick(); // record end time
 	  //uint32_t cycles = DWT->CYCCNT;
 	  // Stress test loop
 
-	  double_exec[i] = end_ms - start_ms; // calculate execution time
+	  fixed_exec[i] = end_ms - start_ms; // calculate execution time
 	  //exec_cycles[i] = cycles;
 
 	  /*int pixels = size * size;
