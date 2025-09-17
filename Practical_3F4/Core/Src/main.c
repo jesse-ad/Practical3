@@ -25,14 +25,13 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-//TODO: Define variables you think you might need
 // - Performance timing variables (e.g execution time, throughput, pixels per second, clock cycles)
 	//volatile uint32_t start_time = 0;
 	//volatile uint32_t end_time = 0;
-	volatile uint32_t fixed_checksums[5];
-	volatile uint32_t exec_ms[5];
-	volatile uint32_t exec_cycles[5];
-	volatile uint32_t throughput[5];
+	volatile uint32_t fixed_checksums[5][5];
+	volatile uint32_t fixed_exec[5][5];
+	//volatile uint32_t exec_cycles[5];
+	//volatile uint32_t throughput[5];
 	//volatile uint64_t double_checksums[5][5];s
 	//volatile uint32_t double_exec[5][5];
 
@@ -71,42 +70,45 @@ int main(void)
   MX_GPIO_Init();
 
   // Enable DWT cycle counter
-  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+  /*CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
   DWT->CYCCNT = 0;    // reset counter
-  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;  // enable counter
+  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;  */// enable counter
 
 
   /* USER CODE BEGIN 2 */
 
 
   int sizes[] = {128, 160, 192, 244, 256};
-  //int max_iters[] = {100, 250, 500, 750, 1000};
+  int max_iters[] = {100, 250, 500, 750, 1000};
 
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
 
   /* USER CODE END 2 */
 for (int i = 0; i < 5; i++)
  {
+	for (int j = 0; j < 5; j++) {
 	  int size = sizes[i];
+	  int max_iter = max_iters[j];
 
 	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
-	  DWT->CYCCNT = 0;
+	  //DWT->CYCCNT = 0;
 	  uint32_t start_ms = HAL_GetTick();
 
 
-	  checksum = calculate_mandelbrot_fixed_point_arithmetic(size, size, MAX_ITER); // call mandelbrot and store in checksum
-
+	  checksum = calculate_mandelbrot_fixed_point_arithmetic(size, size, max_iter); // call mandelbrot and store in checksum
+	  fixed_checksums[i][j] = checksum;
 	  uint32_t end_ms = HAL_GetTick(); // record end time
-	  uint32_t cycles = DWT->CYCCNT;
-	  exec_ms[i] = end_ms - start_ms; // calculate execution time
-	  exec_cycles[i] = cycles;
+	  //uint32_t cycles = DWT->CYCCNT;
+	  fixed_exec[i][j] = end_ms - start_ms; // calculate execution time
+	  //exec_cycles[i] = cycles;
 
-	  int pixels = size * size;
+	  /*int pixels = size * size;
 	  float execution_time_s = (float)cycles / (float)SystemCoreClock;
-	  throughput[i] = (uint32_t)pixels / execution_time_s;
+	  throughput[i] = (uint32_t)pixels / execution_time_s;*/
 
 	  HAL_Delay(200);
 	}
+ }
 
 
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1, GPIO_PIN_RESET);
@@ -258,7 +260,7 @@ void SystemClock_Config(void)
 			 xi = 0;
 			 yi = 0;
 			 iteration = 0;
-			 while (iteration < MAX_ITER && (((xi * xi) >> FIXED_SHIFT) + ((yi * yi) >> FIXED_SHIFT) < (4 << FIXED_SHIFT))) {
+			 while (iteration < max_iterations && (((xi * xi) >> FIXED_SHIFT) + ((yi * yi) >> FIXED_SHIFT) < (4 << FIXED_SHIFT))) {
 				 x_temp = ((xi * xi) >> FIXED_SHIFT) - ((yi * yi) >> FIXED_SHIFT) + x0;
 				 yi = (((2 * xi * yi) >> FIXED_SHIFT) + y0);
 				 xi = x_temp;
