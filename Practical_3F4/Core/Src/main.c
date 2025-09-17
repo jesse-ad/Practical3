@@ -28,12 +28,14 @@
 // - Performance timing variables (e.g execution time, throughput, pixels per second, clock cycles)
 	//volatile uint32_t start_time = 0;
 	//volatile uint32_t end_time = 0;
-	volatile uint32_t fixed_checksums[5][5];
-	volatile uint32_t fixed_exec[5][5];
+	volatile uint32_t fixed_checksums[5];
+	volatile uint32_t fixed_exec[5];
 	//volatile uint32_t exec_cycles[5];
 	//volatile uint32_t throughput[5];
-	//volatile uint64_t double_checksums[5][5];s
-	//volatile uint32_t double_exec[5][5];
+	volatile uint64_t double_checksums[5];
+	volatile uint32_t double_exec[5];
+	volatile uint64_t float_checksums[5];
+	volatile uint32_t float_exec[5];
 
 	volatile uint32_t execution_time = 0;
 	volatile uint64_t checksum = 0;
@@ -56,6 +58,7 @@ void MX_GPIO_Init(void);
 /* USER CODE END 0 */
  uint64_t calculate_mandelbrot_fixed_point_arithmetic(int width, int height, int max_iterations);
  uint64_t calculate_mandelbrot_double(int width, int height, int max_iterations);
+ uint64_t calculate_mandelbrot_float(int width, int height, int max_iterations);
 /**
   * @brief  The application entry point.
   * @retval int
@@ -79,27 +82,29 @@ int main(void)
 
 
   int sizes[] = {128, 160, 192, 244, 256};
-  int max_iters[] = {100, 250, 500, 750, 1000};
+  //int max_iters[] = {100, 250, 500, 750, 1000};
 
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
 
   /* USER CODE END 2 */
 for (int i = 0; i < 5; i++)
  {
-	for (int j = 0; j < 5; j++) {
+
 	  int size = sizes[i];
-	  int max_iter = max_iters[j];
+
 
 	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
 	  //DWT->CYCCNT = 0;
 	  uint32_t start_ms = HAL_GetTick();
 
 
-	  checksum = calculate_mandelbrot_fixed_point_arithmetic(size, size, max_iter); // call mandelbrot and store in checksum
-	  fixed_checksums[i][j] = checksum;
+	  checksum = calculate_mandelbrot_double(size, size, MAX_ITER); // call mandelbrot and store in checksum
+	  double_checksums[i] = checksum;
 	  uint32_t end_ms = HAL_GetTick(); // record end time
 	  //uint32_t cycles = DWT->CYCCNT;
-	  fixed_exec[i][j] = end_ms - start_ms; // calculate execution time
+	  // Stress test loop
+
+	  double_exec[i] = end_ms - start_ms; // calculate execution time
 	  //exec_cycles[i] = cycles;
 
 	  /*int pixels = size * size;
@@ -107,8 +112,35 @@ for (int i = 0; i < 5; i++)
 	  throughput[i] = (uint32_t)pixels / execution_time_s;*/
 
 	  HAL_Delay(200);
-	}
+
  }
+/* USER CODE END 2 */
+for (int i = 0; i < 5; i++)
+{
+
+	  int size = sizes[i];
+
+
+	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+	  //DWT->CYCCNT = 0;
+	  uint32_t start_ms = HAL_GetTick();
+
+
+	  checksum = calculate_mandelbrot_float(size, size, MAX_ITER); // call mandelbrot and store in checksum
+	  float_checksums[i] = checksum;
+	  uint32_t end_ms = HAL_GetTick(); // record end time
+	  //uint32_t cycles = DWT->CYCCNT;
+	  float_exec[i] = end_ms - start_ms; // calculate execution time
+	  //exec_cycles[i] = cycles;
+
+	  /*int pixels = size * size;
+	  float execution_time_s = (float)cycles / (float)SystemCoreClock;
+	  throughput[i] = (uint32_t)pixels / execution_time_s;*/
+
+	  HAL_Delay(200);
+
+}
+
 
 
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1, GPIO_PIN_RESET);
@@ -296,6 +328,30 @@ void SystemClock_Config(void)
         }
     return mandelbrot_sum;
 }
+
+ /* Floating point mandelbrot sum */
+  uint64_t calculate_mandelbrot_float(int width, int height, int max_iterations){
+     uint64_t mandelbrot_sum = 0;
+     //TODO: Complete the function implementation
+     for (int y = 0; y < height; y++) {
+         	for (int x = 0; x < width; x++) {
+         		float x0 = (x / (float)width * 3.5) - 2.5;
+         		float y0 = (y / (float)height * 2.0) - 1.0;
+         		float xi = 0;
+         		float yi = 0;
+         		int iteration = 0;
+         		while (iteration < max_iterations && ((xi*xi + yi*yi) < 4.0)) {
+         			float x_temp = xi*xi - yi*yi;
+         			yi = 2.0 * xi * yi + y0;
+         			xi = x_temp + x0;
+         			iteration++;
+         		}
+         		mandelbrot_sum += iteration;
+         	}
+         }
+     return mandelbrot_sum;
+ }
+
 
 
 
