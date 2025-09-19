@@ -1,5 +1,6 @@
 /* Practical F4 benchmarking test
- * Modified by: Jesse Adams and Ntsika Ntshebe */
+ * Modified by: Jesse Adams and Ntsika Ntshebe
+ * Date: 19 September 2025*/
 /**
   ******************************************************************************
   * @file           : main.c
@@ -20,7 +21,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include <stdint.h>
+#include "core_cm4.h"
 #define MAX_ITER 100
+
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -28,16 +31,18 @@
 // - Performance timing variables (e.g execution time, throughput, pixels per second, clock cycles)
 	//volatile uint32_t start_time = 0;
 	//volatile uint32_t end_time = 0;
-	volatile uint32_t fixed_checksums[5];
-	volatile uint32_t fixed_exec[5];
-	//volatile uint32_t exec_cycles[5];
-	//volatile uint32_t throughput[5];
-	volatile uint64_t double_checksums[5];
-	volatile uint32_t double_exec[5];
+	volatile uint32_t checksums[5];
+	volatile uint32_t exec[5];
+	volatile uint64_t exec_cycles[5];
+	volatile uint64_t exec_s[5];
+	volatile uint32_t throughput[5];
+	//volatile uint64_t double_checksums[5];
+	//volatile uint32_t double_exec[5];
 
 
 	volatile uint32_t execution_time = 0;
 	volatile uint64_t checksum = 0;
+	uint64_t totalPixels = 0;
 
 
 /* USER CODE END PV */
@@ -58,6 +63,7 @@ void MX_GPIO_Init(void);
  uint64_t calculate_mandelbrot_fixed_point_arithmetic(int width, int height, int max_iterations);
  uint64_t calculate_mandelbrot_double(int width, int height, int max_iterations);
  uint64_t calculate_mandelbrot_float(int width, int height, int max_iterations);
+ uint64_t calculate_mandelbrot_chunk(int width, int height, int y_start, int y_end, int max_iterations);
 /**
   * @brief  The application entry point.
   * @retval int
@@ -72,43 +78,42 @@ int main(void)
   MX_GPIO_Init();
 
   // Enable DWT cycle counter
-  /*CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-  DWT->CYCCNT = 0;    // reset counter
-  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;  */// enable counter
+  //CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+  //DWT->CYCCNT = 0;    // reset counter
+  //DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 
 
   /* USER CODE BEGIN 2 */
+  //DWT->CYCCNT = 0;
 
+  //int sizes[] = {128, 160, 192, 244, 256};
 
-  int sizes[] = {128, 160, 192, 244, 256};
+  int heights[] = {256, 512, 800, 1024, 1920};
+  int widths[] = {256, 512, 800, 1024, 1080};
   //int max_iters[] = {100, 250, 500, 750, 1000};
 
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
 
-  /* USER CODE END 2 */
-for (int i = 0; i < 5; i++)
- {
 
-	  int size = sizes[i];
+  /* USER CODE END 2 */
+for (int i = 0; i < 5; i++) {
+
+
+	  //int size = sizes[i];
 
 
 	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
-	  //DWT->CYCCNT = 0;
-	  uint32_t start_ms = HAL_GetTick();
 
+	  uint32_t start_ms = HAL_GetTick(); // record start time
+	  /
 
-	  checksum = calculate_mandelbrot_fixed_point_arithmetic(size, size, MAX_ITER); // call mandelbrot and store in checksum
-	  fixed_checksums[i] = checksum;
+	  uint64_t checksums = calculate_mandelbrot_fixed_point_arithmetic(heights[i], widths[i], MAX_ITER);
+
+	  checksums[i] = checksum;
+
 	  uint32_t end_ms = HAL_GetTick(); // record end time
-	  //uint32_t cycles = DWT->CYCCNT;
-	  // Stress test loop
 
-	  fixed_exec[i] = end_ms - start_ms; // calculate execution time
-	  //exec_cycles[i] = cycles;
-
-	  /*int pixels = size * size;
-	  float execution_time_s = (float)cycles / (float)SystemCoreClock;
-	  throughput[i] = (uint32_t)pixels / execution_time_s;*/
+	  exec[i] = end_ms - start_ms; // calculate execution time
 
 	  HAL_Delay(200);
 
@@ -120,52 +125,10 @@ for (int i = 0; i < 5; i++)
 
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1, GPIO_PIN_RESET);
 	__BKPT(0);
-  }
-/* USER CODE END 2 */
-/*for (int i = 0; i < 5; i++)
- {
-	  int size = sizes[i];
-
-	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET); // record start time
-	  checksum = calculate_mandelbrot_double(size, size, MAX_ITER); // call mandelbrot and store in checksum
-	  double_checksums[i] = checksum;
-	  end_time = HAL_GetTick(); // record end time
-	  double_exec[i] = end_time - start_time; // calculate execution time
-
-s
-  }*/
-
-
-
-
-
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  /*while (1)
-  {
-
-
-    /* USER CODE BEGIN 3 */
-	  //TODO: Visual indicator: Turn on LED0 to signal processing start
-
-
-	  //TODO: Benchmark and Profile Performance
-
-
-	  //TODO: Visual indicator: Turn on LED1 to signal processing start
-	  /*HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
-
-	  //TODO: Keep the LEDs ON for 2s
-	  HAL_Delay(2000);
-
-	  //TODO: Turn OFF LEDs
-
-	   __BKPT(0);
-
-  }
-
 }
+
+
+
 
 /**
   * @brief System Clock Configuration
@@ -253,10 +216,10 @@ void SystemClock_Config(void)
 
 /* Fixed point mandelbrot sum */
  uint64_t calculate_mandelbrot_fixed_point_arithmetic(int width, int height, int max_iterations){
-  uint64_t mandelbrot_sum = 0;
+ uint64_t mandelbrot_sum = 0;
 
    // Fixed variables
-	#define FIXED_SHIFT 16
+	#define FIXED_SHIFT 12
 	#define FIXED_ONE (1 << FIXED_SHIFT)
 	int x0, y0, xi, yi, x_temp, iteration;
 
@@ -279,7 +242,7 @@ void SystemClock_Config(void)
 	 }
     return mandelbrot_sum;
 
-}
+ }
 
 /* Double precision mandelbrot sum */
  uint64_t calculate_mandelbrot_double(int width, int height, int max_iterations){
