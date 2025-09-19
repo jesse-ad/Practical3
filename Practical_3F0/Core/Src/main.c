@@ -1,4 +1,6 @@
-/* USER CODE BEGIN Header */
+/* Practical 3F0 code
+ * Modified by: Jesse Adams and Nstika Ntshebe
+ * Date: 19 September 2025 */
 /**
   ******************************************************************************
   * @file           : main.c
@@ -30,14 +32,8 @@
 
 /* USER CODE BEGIN PV */
 // - Performance timing variables (e.g execution time, throughput, pixels per second, clock cycles)
-	//volatile uint32_t start_time = 0;
-	//volatile uint32_t end_time = 0;
 	volatile uint32_t fixed_checksums[5];
 	volatile uint32_t fixed_exec[5];
-	//volatile uint32_t exec_ms[5];
-	//volatile uint32_t exec_cycles[5];
-	//volatile uint32_t throughput[5];
-
 	volatile uint32_t execution_time = 0;
 	volatile uint64_t checksum = 0;
 
@@ -89,32 +85,26 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 
-  int sizes[] = {128, 160, 192, 244, 256};
-  int max_iters[] = {100, 250, 500, 750, 1000};
-
+  //int sizes[] = {128, 160, 192, 244, 256};
+  //int max_iters[] = {100, 250, 500, 750, 1000};
+  int heights[] = {256, 512, 800, 1024, 1920};
+  int widths[] = {256, 512, 800, 1024, 1080};
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
 
   /* USER CODE END 2 */
 for (int i = 0; i < 5; i++)
  {
-	  int size = sizes[i];
-
 
 	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
 
-	  uint32_t start_ms = HAL_GetTick();
+	  uint32_t start_ms = HAL_GetTick(); // record start time
 
 
-	  checksum = calculate_mandelbrot_fixed_point_arithmetic(size, size, MAX_ITER); // call mandelbrot and store in checksum
+	  checksum = calculate_mandelbrot_fixed_point_arithmetic(heights[i], widths[i], MAX_ITER); // call mandelbrot and store in checksum
 	  fixed_checksums[i] = checksum;
 	  uint32_t end_ms = HAL_GetTick(); // record end time
 
 	  fixed_exec[i] = end_ms - start_ms; // calculate execution time
-
-
-	  /*int pixels = size * size;
-	  float execution_time_s = (float)cycles / (float)SystemCoreClock;
-	  throughput[i] = (uint32_t)pixels / execution_time_s;*/
 
 	  HAL_Delay(200);
 	}
@@ -124,31 +114,7 @@ for (int i = 0; i < 5; i++)
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1, GPIO_PIN_RESET);
 	__BKPT(0);
   }
-/* USER CODE END 2 */
-/*for (int i = 0; i < 5; i++)
- {
-	  int size = sizes[i];
 
-	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET); // record start time
-	  checksum = calculate_mandelbrot_double(size, size, MAX_ITER); // call mandelbrot and store in checksum
-	  double_checksums[i] = checksum;
-	  end_time = HAL_GetTick(); // record end time
-	  double_exec[i] = end_time - start_time; // calculate execution time
-
-s
-  }*/
-  /*while (1)
-  {
-
-
-  }*/
-
-
-
-/**
-  * @brief System Clock Configuration
-  * @retval None
-  */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -226,7 +192,7 @@ static void MX_GPIO_Init(void)
   uint64_t mandelbrot_sum = 0;
 
    // Fixed variables
-	#define FIXED_SHIFT 16
+	#define FIXED_SHIFT 12
 	#define FIXED_ONE (1 << FIXED_SHIFT)
 	int x0, y0, xi, yi, x_temp, iteration;
 
